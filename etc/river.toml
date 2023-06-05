@@ -1,0 +1,60 @@
+# MySQL master address, user and password
+
+source_addr = "127.0.0.1:3306"
+source_user = "root"
+source_pass = "ef08ef776ce21a44"
+source_charset = "utf8"
+
+
+# clickhouse slave address, user and password
+sink_addr = "127.0.0.1:42722"
+sink_user = "default"
+sink_pass = "default"
+sink_charset = "utf8"
+
+thread      = 10
+max_connect = 20
+max_open    = 30
+
+# Path to store data, like master.info, if not set or empty,
+# we must use this to support breakpoint resume syncing. 
+# TODO: support other storage, like etcd. 
+data_dir = "./log"
+
+# Inner Http status address    /stat    /debug/pprof/
+#stat_addr = "0.0.0.0:12800"
+
+# pseudo server id like a slave 
+server_id = 10041
+
+# mysql or mariadb
+flavor = "mysql"
+
+# mysqldump execution path
+# if not set or empty, ignore mysqldump.
+mysqldump = "mysqldump"
+
+# if we have no privilege to use mysqldump with --master-data,
+# we must skip it.
+#skip_master_data = false
+
+# minimal items to be inserted in one bulk
+bulk_size = 128
+
+# force flush the pending requests if we don't have enough items >= bulk_size
+flush_bulk_time = "1ms"
+
+# Ignore table without primary key
+skip_no_pk_table = false
+
+# MySQL data source
+[[source]]
+schema = "niushop"
+tables = ["adv"]
+
+
+[[rule]]
+source_schema = "niushop"
+source_table = "adv"
+sink_schema = "azmbk_com_db"
+sink_table = "adv"

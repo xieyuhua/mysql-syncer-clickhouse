@@ -9,7 +9,7 @@ source_charset = "utf8"
 # clickhouse slave address, user and password
 sink_addr = "127.0.0.1:42722"
 sink_user = "default"
-sink_pass = "default"
+sink_pass = "*****"
 sink_charset = "utf8"
 
 thread      = 10

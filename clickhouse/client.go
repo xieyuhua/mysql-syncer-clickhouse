@@ -132,7 +132,6 @@ func (r *BulkRequest) bulk(c *Client,tx *sql.Tx) error {
 		// for delete
 		sql := "ALTER TABLE " + r.Schema + "." + r.Table+ " DELETE WHERE " + r.PkName + " = ?"
 		log.Infof("Execute success --> %v", sql)
-		
         stmtIns, err := tx.Prepare(sql)
     	if err != nil {
     	    log.Infof("Prepare err")
@@ -154,7 +153,6 @@ func (r *BulkRequest) bulk(c *Client,tx *sql.Tx) error {
 		keys := make([]string, 0, len(r.Data))
 		values := make([]interface{}, 0, len(r.Data))
 		for k, v := range r.Data {
-		    
 		    switch v.(type) {
         	    case string:
         	        fmt.Println("string",k,  v.(string))
@@ -162,111 +160,33 @@ func (r *BulkRequest) bulk(c *Client,tx *sql.Tx) error {
                     // v = tmpDecimal.String()
             	   // value = append(value, v) 
             		break
-            	case int:
-            	    fmt.Println("int", v.(int))
+            	case int,uint,int8,uint8,int16,uint16,int32,uint32,int64,uint64:
+            	    fmt.Println("int",k, v)
             	    
                     vs := fmt.Sprintf("%d", v)
             	    v = StrToInt64(vs)
             	   // value = append(value, v.(int)) 
             	break
-            	case uint:
-            	    fmt.Println("uint", v.(uint))
-            	    
-                    vs := fmt.Sprintf("%d", v)
-            	    v = StrToInt64(vs)
-            	   // value = append(value, v.(uint)) 
-            	break
-            	case int8:
-            	    fmt.Println("int8", v.(int8))
-                    vs := fmt.Sprintf("%d", v)
-            	    v = StrToInt64(vs)
-            	   // value = append(value, v.(int8)) 
-            	break
-            	case uint8:
-            	    fmt.Println("uint8", v.(uint8))
-            	    
-                    vs := fmt.Sprintf("%d", v)
-            	    v = StrToInt64(vs)
-            	   // value = append(value, v.(uint8)) 
-            	break
-            	case int16:
-            	    fmt.Println("int16", v.(int16))
-                    vs := fmt.Sprintf("%d", v)
-            	    v = StrToInt64(vs)
-            	   // value = append(value, v.(int16)) 
-            	break
-            	case uint16:
-            	    fmt.Println("uint16", v.(uint16))
-            	    
-                    vs := fmt.Sprintf("%d", v)
-            	    v = StrToInt64(vs)
-            	   // value = append(value, v.(uint16)) 
-            	break
-            	case int32:
-            	    fmt.Println("int32", v.(int32))
-            	    
-                    vs := fmt.Sprintf("%d", v)
-            	    v = StrToInt64(vs)
-            	   // value = append(value, v.(int32)) 
-            	break
-            	case uint32:
-            	    fmt.Println("uint32", v.(uint32))
-            	    
-                    vs := fmt.Sprintf("%d", v)
-            	    v = StrToInt64(vs)
-            	   // value = append(value, v.(uint32)) 
-            	break
-            	case int64:
-            	    fmt.Println("int64", v.(int64))
-            	    
-                    vs := fmt.Sprintf("%d", v)
-            	    v = StrToInt64(vs)
-            	   // value = append(value, v.(int64)) 
-            	break
-            	case uint64:
-            	    fmt.Println("uint64", v.(uint64))
-            	    
-                    vs := fmt.Sprintf("%d", v)
-            	    v = StrToInt64(vs)
-            	    
-            	   // value = append(value, v.(uint64)) 
-            	break
-            	case float64:
-                    fmt.Println("float64 to int", v.(float64))
-                    
-                    vs := fmt.Sprintf("%v", v)
-            	    v = StrToInt64(vs)
-            	    
+            	case float64,float32:
+                    fmt.Println("float", k,v)
+            	    v = v.(float64)
             	   // value = append(value, v.(float64)) 
             	break
-            	case float32:
-                    fmt.Println("float32 to int", v.(float32))
-                    
-                    vs := fmt.Sprintf("%d", v)
-                    v = StrToInt64(vs)
-            	   // value = append(value, v.(float32)) 
-            	break
             	default:
-                    v = fmt.Sprintf("%v", v)
+                    v = fmt.Sprintf("%v",k, v)
         	}
-		    
 			keys   = append(keys, k)
 			values = append(values, v)
 		}
-		
-		
     	if len(keys) == 0 {
     		break;
     	}
-    	
     	sql := " ALTER TABLE " + r.Schema + "." + r.Table + " UPDATE " + keys[0] + " = ? "
 		for _, v := range keys[1:] {
 			sql += ", " + v + " = ?"
 		}
 		sql += " WHERE " + r.PkName + " = ?"
-		
 		values = append(values, r.PkValue)
-		
 		log.Infof("Execute success --> %v", sql)
 // 		log.Infof("Execute success --> %v", values)
         stmtIns, err := tx.Prepare(sql)
@@ -286,10 +206,8 @@ func (r *BulkRequest) bulk(c *Client,tx *sql.Tx) error {
 	default:
 		// for insert
 		value := make([]interface{}, 0, len(r.Data))
-		
 		fields  := ""
 		values  := ""
-		
 		for k, v := range r.Data {
 		    switch v.(type) {
         	    case string:
@@ -298,96 +216,23 @@ func (r *BulkRequest) bulk(c *Client,tx *sql.Tx) error {
                     // v = tmpDecimal.String()
             	   // value = append(value, v) 
             		break
-            	case int:
-            	    fmt.Println("int", v.(int))
+            	case int,uint,int8,uint8,int16,uint16,int32,uint32,int64,uint64:
+            	    fmt.Println("int",k, v)
             	    
                     vs := fmt.Sprintf("%d", v)
             	    v = StrToInt64(vs)
             	   // value = append(value, v.(int)) 
             	break
-            	case uint:
-            	    fmt.Println("uint", v.(uint))
-            	    
-                    vs := fmt.Sprintf("%d", v)
-            	    v = StrToInt64(vs)
-            	   // value = append(value, v.(uint)) 
-            	break
-            	case int8:
-            	    fmt.Println("int8", v.(int8))
-                    vs := fmt.Sprintf("%d", v)
-            	    v = StrToInt64(vs)
-            	   // value = append(value, v.(int8)) 
-            	break
-            	case uint8:
-            	    fmt.Println("uint8", v.(uint8))
-            	    
-                    vs := fmt.Sprintf("%d", v)
-            	    v = StrToInt64(vs)
-            	   // value = append(value, v.(uint8)) 
-            	break
-            	case int16:
-            	    fmt.Println("int16", v.(int16))
-                    vs := fmt.Sprintf("%d", v)
-            	    v = StrToInt64(vs)
-            	   // value = append(value, v.(int16)) 
-            	break
-            	case uint16:
-            	    fmt.Println("uint16", v.(uint16))
-            	    
-                    vs := fmt.Sprintf("%d", v)
-            	    v = StrToInt64(vs)
-            	   // value = append(value, v.(uint16)) 
-            	break
-            	case int32:
-            	    fmt.Println("int32", v.(int32))
-            	    
-                    vs := fmt.Sprintf("%d", v)
-            	    v = StrToInt64(vs)
-            	   // value = append(value, v.(int32)) 
-            	break
-            	case uint32:
-            	    fmt.Println("uint32", v.(uint32))
-            	    
-                    vs := fmt.Sprintf("%d", v)
-            	    v = StrToInt64(vs)
-            	   // value = append(value, v.(uint32)) 
-            	break
-            	case int64:
-            	    fmt.Println("int64", v.(int64))
-            	    
-                    vs := fmt.Sprintf("%d", v)
-            	    v = StrToInt64(vs)
-            	   // value = append(value, v.(int64)) 
-            	break
-            	case uint64:
-            	    fmt.Println("uint64", v.(uint64))
-            	    
-                    vs := fmt.Sprintf("%d", v)
-            	    v = StrToInt64(vs)
-            	    
-            	   // value = append(value, v.(uint64)) 
-            	break
-            	case float64:
-                    fmt.Println("float64 to int", v.(float64))
-                    
-                    vs := fmt.Sprintf("%v", v)
-            	    v = StrToInt64(vs)
-            	    
+            	case float64,float32:
+                    fmt.Println("float",k, v)
+            	    v = v.(float64)
             	   // value = append(value, v.(float64)) 
             	break
-            	case float32:
-                    fmt.Println("float32 to int", v.(float32))
-                    
-                    vs := fmt.Sprintf("%d", v)
-                    v = StrToInt64(vs)
-            	   // value = append(value, v.(float32)) 
-            	break
             	default:
-                    v = fmt.Sprintf("%v", v)
+                    v = fmt.Sprintf("%v",k, v)
         	}
-        	
+        	// int,uint,int8,uint8,int16,uint16,int32,uint32,int64,uint64,float32,float64
         	value = append(value, v) 
-        	
 			if fields == ""{
 				fields = k
 				values =  "?"
@@ -404,8 +249,6 @@ func (r *BulkRequest) bulk(c *Client,tx *sql.Tx) error {
         //执行
 		log.Infof("Execute success  --> %v", sql)
         // log.Infof("Execute value  --> %v", value)
-		
-
         stmtIns, err := tx.Prepare(sql)
     	if err != nil {
     	    log.Infof("Execute err")

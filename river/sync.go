@@ -9,7 +9,7 @@ import (
 
 	"github.com/juju/errors"
 	"github.com/siddontang/go-log/log"
-	mysqlsink "github.com/zhaochuanyun/go-mysql-syncer/clickhouse"
+	mysqlsink "github.com/zhaochuanyun/go-mysql-ck/clickhouse"
 	"github.com/zhaochuanyun/go-mysql/canal"
 	"github.com/zhaochuanyun/go-mysql/mysql"
 	"github.com/zhaochuanyun/go-mysql/replication"

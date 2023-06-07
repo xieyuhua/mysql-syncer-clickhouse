@@ -9,7 +9,7 @@ import (
 	"syscall"
 	"github.com/juju/errors"
 	"github.com/siddontang/go-log/log"
-	"github.com/zhaochuanyun/go-mysql-syncer/river"
+	"github.com/zhaochuanyun/go-mysql-ck/river"
 )
 
 

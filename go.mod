@@ -1,4 +1,4 @@
-module github.com/zhaochuanyun/go-mysql-syncer
+module github.com/zhaochuanyun/go-mysql-ck
 
 go 1.12
 

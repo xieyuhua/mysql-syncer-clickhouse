@@ -8,7 +8,7 @@ import (
 	"time"
 
 	. "github.com/pingcap/check"
-	"github.com/zhaochuanyun/go-mysql-syncer/elastic"
+	"github.com/zhaochuanyun/go-mysql-ck/elastic"
 	"github.com/zhaochuanyun/go-mysql/client"
 	"github.com/zhaochuanyun/go-mysql/mysql"
 )

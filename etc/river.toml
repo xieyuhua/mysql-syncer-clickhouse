@@ -9,7 +9,7 @@ source_charset = "utf8"
 # clickhouse slave address, user and password
 sink_addr = "127.0.0.1:42722"
 sink_user = "default"
-sink_pass = "*****"
+sink_pass = "xieyuhua"
 sink_charset = "utf8"
 
 thread      = 10
@@ -39,7 +39,7 @@ mysqldump = "mysqldump"
 #skip_master_data = false
 
 # minimal items to be inserted in one bulk
-bulk_size = 128
+bulk_size = 64
 
 # force flush the pending requests if we don't have enough items >= bulk_size
 flush_bulk_time = "1ms"

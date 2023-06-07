@@ -13,9 +13,10 @@
   adv_url String,
   adv_image String,
   slide_sort Int64,
-  price Int64,
+  price Nullable(Decimal(10, 2)),
   background String,
-  state Int64
+  state Int64,
+  add_time DateTime
 ) ENGINE = MergeTree() ORDER BY (adv_id);
 
 

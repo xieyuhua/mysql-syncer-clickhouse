@@ -3,6 +3,8 @@ package mysql
 import (
 	"fmt"
 	"sync"
+	"flag"
+	"time"
 	"strconv"
 	"github.com/siddontang/go-log/log"
     "github.com/pingcap/errors"
@@ -92,8 +94,6 @@ func (c *Client) Bulk(reqs []*BulkRequest)  (interface{} ,error) {
 	    //占位
         go func(req *BulkRequest,c *Client, wg *sync.WaitGroup) {
             wg.Add(1)
-            // log.Infof("************ success --> %v", i)
-            // time.Sleep(4 * time.Second) 
             tx, _   := c.conn.Begin()
     		if err := req.bulk(c, tx); err != nil {
     		    <-chans
@@ -124,12 +124,21 @@ func StrToInt64(tmpStr string) int{
     return tmpInt
 }
 
+//是否过滤删除操作
+var FilterDelete = flag.Bool("action", true, "Ignore the delete operation")
+
+
 //执行更新
 func (r *BulkRequest) bulk(c *Client,tx *sql.Tx) error {
 	
 	switch r.Action {
 	case ActionDelete:
 		// for delete
+		
+	    if *FilterDelete {
+	        break;
+	    }
+		
 		sql := "ALTER TABLE " + r.Schema + "." + r.Table+ " DELETE WHERE " + r.PkName + " = ?"
 		log.Infof("Execute success --> %v", sql)
         stmtIns, err := tx.Prepare(sql)
@@ -147,7 +156,6 @@ func (r *BulkRequest) bulk(c *Client,tx *sql.Tx) error {
             return  errors.Trace(err)
     	}
     	
-    	
 	case ActionUpdate:
 // 	INSERT INTO test_unique_key ( `id`, `name`, `term_id`, `class_id`, `course_id` ) VALUES( '17012', 'cate', '172012', '170', '1711' ) ON DUPLICATE KEY UPDATE name = '张三1',course_id=32
 		keys := make([]string, 0, len(r.Data))
@@ -155,10 +163,17 @@ func (r *BulkRequest) bulk(c *Client,tx *sql.Tx) error {
 		for k, v := range r.Data {
 		    switch v.(type) {
         	    case string:
-        	        fmt.Println("string",k,  v.(string))
-                    // tmpDecimal, _ := decimal.NewFromString(v.(string))
-                    // v = tmpDecimal.String()
-            	   // value = append(value, v) 
+        	        v = v.(string)
+    				if v.(string) == "0000-00-00" {
+    					fmt.Println("Date",k,  v.(string))
+    					break
+    				}
+    				_, err := time.Parse("2006-01-02", v.(string))
+    				if err == nil {
+    					fmt.Println("Date",k,  v.(string))
+    				} else {
+    					fmt.Println("string",k,  v.(string))
+    				}
             		break
             	case int,uint,int8,uint8,int16,uint16,int32,uint32,int64,uint64:
             	    fmt.Println("int",k, v)
@@ -211,10 +226,18 @@ func (r *BulkRequest) bulk(c *Client,tx *sql.Tx) error {
 		for k, v := range r.Data {
 		    switch v.(type) {
         	    case string:
-        	        fmt.Println("string",k,  v.(string))
-                    // tmpDecimal, _ := decimal.NewFromString(v.(string))
-                    // v = tmpDecimal.String()
-            	   // value = append(value, v) 
+        	        v = v.(string)
+    				if v.(string) == "0000-00-00" {
+    					fmt.Println("Date",k,  v.(string))
+    					break
+    				}
+    				_, err := time.Parse("2006-01-02", v.(string))
+    				if err == nil {
+    					fmt.Println("Date",k,  v.(string))
+    				} else {
+    					fmt.Println("string",k,  v.(string))
+    				}
+                	   
             		break
             	case int,uint,int8,uint8,int16,uint16,int32,uint32,int64,uint64:
             	    fmt.Println("int",k, v)

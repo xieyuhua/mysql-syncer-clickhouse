@@ -5,6 +5,24 @@
 合理配置bulk_size、thread 详细配置见etc/river.toml
 
 ```
+Usage of /tmp/go-build3489104203/b001/exe/main:
+  -config string
+    	mysqlsync config file (default "./etc/river.toml")
+  -delete
+    	Ignore the delete operation (default true)
+  -exec string
+    	mysqldump execution path
+  -flavor string
+    	flavor: mysql or mariadb (default "mysql")
+  -log_level string
+    	log level (default "info")
+  -thread int
+    	The client connect thread num (default 1)
+  -update
+    	Ignore the update operation (default true)
+
+
+
  CREATE TABLE adv (
   adv_id Int64,
   site_id Int64,

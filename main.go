@@ -14,8 +14,8 @@ import (
 
 
 var configFile = flag.String("config", "./etc/river.toml", "mysqlsync config file")
-var data_dir = flag.String("data_dir", "", "path for mysqlsync to save data")
-var server_id = flag.Int("server_id", 0, "MySQL server id, as a pseudo slave")
+// var data_dir = flag.String("data_dir", "", "path for mysqlsync to save data")
+// var server_id = flag.Int("server_id", 0, "MySQL server id, as a pseudo slave")
 var flavor = flag.String("flavor", "mysql", "flavor: mysql or mariadb")
 var execution = flag.String("exec", "", "mysqldump execution path")
 var logLevel = flag.String("log_level", "info", "log level")
@@ -44,13 +44,13 @@ func main() {
 		return
 	}
 
-	if *server_id > 0 {
-		cfg.ServerID = uint32(*server_id)
-	}
+// 	if *server_id > 0 {
+// 		cfg.ServerID = uint32(*server_id)
+// 	}
 
-	if len(*data_dir) > 0 {
-		cfg.DataDir = *data_dir
-	}
+// 	if len(*data_dir) > 0 {
+// 		cfg.DataDir = *data_dir
+// 	}
 
 	if len(*flavor) > 0 {
 		cfg.Flavor = *flavor

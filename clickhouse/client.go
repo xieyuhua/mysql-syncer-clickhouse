@@ -100,13 +100,13 @@ func (c *Client) Bulk(reqs []*BulkRequest)  (interface{} ,error) {
     	    //占位
             go func(req *BulkRequest,c *Client, wg *sync.WaitGroup) {
                 wg.Add(1)
-                tx, _   := c.conn.Begin()
-        		if err := req.bulk(c, tx); err != nil {
+                txs, _   := c.conn.Begin()
+        		if err := req.bulk(c, txs); err != nil {
         		    <-chans
         		    wg.Done()
         		    ddi = errors.Trace(err)
         		}
-                if err := tx.Commit(); err != nil {
+                if err := txs.Commit(); err != nil {
                     wg.Done()
                     <-chans
                     ddi =  errors.Trace(err)
@@ -238,7 +238,10 @@ func StrToInt64(tmpStr string) int{
 }
 
 //是否过滤删除操作
-var FilterDelete = flag.Bool("action", true, "Ignore the delete operation")
+var FilterDelete = flag.Bool("delete", true, "Ignore the delete operation")
+
+//是否过滤更新操作
+var FilterUpdate = flag.Bool("update", true, "Ignore the update operation")
 
 //执行更新
 func (r *BulkRequest) bulk(c *Client,tx *sql.Tx) error {
@@ -255,20 +258,23 @@ func (r *BulkRequest) bulk(c *Client,tx *sql.Tx) error {
 		log.Infof("Execute success --> %v", sql)
         stmtIns, err := tx.Prepare(sql)
     	if err != nil {
-    	    log.Infof("Prepare err")
-            // log.Errorf("Execute Error! --> %v", err)
+            log.Errorf("Prepare Error! --> %v", err)
             return  errors.Trace(err)
     	}
     	defer stmtIns.Close()
     // 	fmt.Println(r.PkValue)
     	_, err = stmtIns.Exec(r.PkValue)
     	if err != nil {
-    	    log.Infof("Execute err")
-            // log.Errorf("Execute Error! --> %v", err)
+            log.Errorf("Execute Error! --> %v", err)
             return  errors.Trace(err)
     	}
     	
 	case ActionUpdate:
+	
+	    if *FilterUpdate {
+	        break;
+	    }
+	
 // 	INSERT INTO test_unique_key ( `id`, `name`, `term_id`, `class_id`, `course_id` ) VALUES( '17012', 'cate', '172012', '170', '1711' ) ON DUPLICATE KEY UPDATE name = '张三1',course_id=32
 		keys := make([]string, 0, len(r.Data))
 		values := make([]interface{}, 0, len(r.Data))
@@ -277,30 +283,30 @@ func (r *BulkRequest) bulk(c *Client,tx *sql.Tx) error {
         	    case string:
         	        v = v.(string)
     				if v.(string) == "0000-00-00" {
-    					fmt.Println("Date",k,  v.(string))
+    					fmt.Println("UPDATE Date",k,  v.(string))
     					break
     				}
     				_, err := time.Parse("2006-01-02", v.(string))
     				if err == nil {
-    					fmt.Println("Date",k,  v.(string))
+    					fmt.Println("UPDATE Date",k,  v.(string))
     				} else {
-    					fmt.Println("string",k,  v.(string))
+    					fmt.Println("UPDATE string",k,  v.(string))
     				}
             		break
             	case int,uint,int8,uint8,int16,uint16,int32,uint32,int64,uint64:
-            	    fmt.Println("int",k, v)
+            	    fmt.Println("UPDATE int",k, v)
             	    
                     vs := fmt.Sprintf("%d", v)
             	    v = StrToInt64(vs)
             	   // value = append(value, v.(int)) 
             	break
             	case float64,float32:
-                    fmt.Println("float", k,v)
+                    fmt.Println("UPDATE float", k,v)
             	    v = v.(float64)
             	   // value = append(value, v.(float64)) 
             	break
             	default:
-                    v = fmt.Sprintf("%v",k, v)
+                    v = fmt.Sprintf("UPDATE %v",k, v)
         	}
 			keys   = append(keys, k)
 			values = append(values, v)
@@ -325,13 +331,12 @@ func (r *BulkRequest) bulk(c *Client,tx *sql.Tx) error {
     	defer stmtIns.Close()
     	_, err = stmtIns.Exec(values...)
     	if err != nil {
-    	    log.Infof("Execute err")
-            // log.Errorf("Execute Error! --> %v", err)
+            log.Errorf("Execute Error! --> %v", err)
             return  errors.Trace(err)
     	}
 		
 	    default:
-	
+	    //已经批量处理过了
 	
 	}
 	

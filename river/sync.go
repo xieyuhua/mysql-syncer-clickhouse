@@ -139,7 +139,7 @@ func (r *River) syncLoop() {
 		select {
     		case v := <-r.syncCh:
     			switch v := v.(type) {
-    			case posSaver:
+    			case posSaver://增量同步
     				now := time.Now()
     				if v.force || now.Sub(lastSavedTime) > 3*time.Second {
     					lastSavedTime = now
@@ -151,7 +151,7 @@ func (r *River) syncLoop() {
     				reqs = append(reqs, v...)
     				needFlush = len(reqs) >= bulkSize
     			}
-    		case <-ticker.C:
+    		case <-ticker.C://全量同步
     			needFlush = true
     		case <-r.ctx.Done():
     			return

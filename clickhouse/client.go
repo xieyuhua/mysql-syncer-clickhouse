@@ -122,7 +122,8 @@ func (c *Client) Bulk(reqs []*BulkRequest)  (interface{} ,error) {
     if ddi != nil {
         return nil, ddi
     }
-    
+    //放入
+    <- m
     
     //批量插入数据
     if len(insertdata)>0 {
@@ -228,7 +229,7 @@ func (c *Client) Bulk(reqs []*BulkRequest)  (interface{} ,error) {
         }
     }
     
-     <- m
+
     
     return nil,nil
 }

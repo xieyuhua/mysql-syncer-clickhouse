@@ -2,9 +2,10 @@ package mysql
 
 import (
 	"fmt"
-	"sync"
 	"flag"
 	"time"
+	"sort"
+	"sync"
 	"strconv"
 	"github.com/siddontang/go-log/log"
     "github.com/pingcap/errors"
@@ -88,37 +89,149 @@ func (c *Client) Bulk(reqs []*BulkRequest)  (interface{} ,error) {
     var ddi error
     ddi = nil
     
-	//限制多线程执行
-	for _, req := range reqs {
-	    chans <- true
-	    //占位
-        go func(req *BulkRequest,c *Client, wg *sync.WaitGroup) {
-            wg.Add(1)
-            tx, _   := c.conn.Begin()
-    		if err := req.bulk(c, tx); err != nil {
-    		    <-chans
-    		    wg.Done()
-    		    ddi = errors.Trace(err)
-    		}
-            if err := tx.Commit(); err != nil {
-                ddi =  errors.Trace(err)
-            }
-    		wg.Done()
-    		<-chans
-        }(req,c,&wg)
-	}
+    insertdata := make(map[string][]*BulkRequest)
+    for _, req := range reqs {
+    	switch req.Action {
+        	case ActionInsert:
+        	    insertdata[req.Table] = append(insertdata[req.Table], req)
+        	    break;
+        	default:  
+        	    chans <- true
+    	    //占位
+            go func(req *BulkRequest,c *Client, wg *sync.WaitGroup) {
+                wg.Add(1)
+                tx, _   := c.conn.Begin()
+        		if err := req.bulk(c, tx); err != nil {
+        		    <-chans
+        		    wg.Done()
+        		    ddi = errors.Trace(err)
+        		}
+                if err := tx.Commit(); err != nil {
+                    wg.Done()
+                    <-chans
+                    ddi =  errors.Trace(err)
+                }
+        		wg.Done()
+        		<-chans
+            }(req,c,&wg)
+    	}
+    }
+    
     // 等待所有的任务完成
     wg.Wait()
     if ddi != nil {
         return nil, ddi
     }
     
-    //放新的一组进入
-    <-m
     
-	return nil, nil
-}
+    //批量插入数据
+    if len(insertdata)>0 {
+        for table, _ := range insertdata {
+            
+            if len(insertdata[table])>0 {
+                //预处理   单表
+                vreq := insertdata[table][0]
+                // 将Map的键放入切片中
+                keys := make([]string, 0, len(vreq.Data))
+                for kv := range vreq.Data {
+                    keys = append(keys, kv)
+                }
+                // 对切片进行排序
+                sort.Strings(keys)
+        		fields  := ""
+        		values  := ""
+                for _, kk := range keys {
+        			if fields == ""{
+        				fields = kk
+        				values =  "?"
+        			}else{
+        				fields += ","+kk
+        				values += ",?"
+        			}
+                }
+        		sql := "INSERT INTO "+vreq.Schema + "."+vreq.Table+" ("+fields+") VALUES ("+values+")"
+            	log.Infof(sql)
+                tx, _   := c.conn.Begin()
+                stmtIns, err := tx.Prepare(sql)
+            	if err != nil {
+                    log.Errorf("Execute Prepare! --> %v", err)
+                    return  nil,errors.Trace(err)
+            	}
+            	defer stmtIns.Close()
 
+                //新增一组数据
+                for _, vv := range insertdata[table] {
+                    value := make([]interface{}, 0, len(vv.Data))
+                    // 将Map的键放入切片中
+                    keysvv := make([]string, 0, len(vv.Data))
+                    for k := range vv.Data {
+                        keysvv = append(keysvv, k)
+                    }
+                    // 对切片进行排序
+                    sort.Strings(keysvv)
+                    
+                    
+                    //新增一条数据
+                    for _, k := range keysvv {
+                        v := vv.Data[k]
+            		    switch v.(type) {
+                    	    case string:
+                    	        v = v.(string)
+                				if v.(string) == "0000-00-00" {
+                					fmt.Println("Date",k,  v.(string))
+                					break
+                				}
+                				_, err := time.Parse("2006-01-02", v.(string))
+                				if err == nil {
+                					fmt.Println("Date",k,  v.(string))
+                				} else {
+                					fmt.Println("string",k,  v.(string))
+                				}
+                            	   
+                        		break
+                        	case int,uint,int8,uint8,int16,uint16,int32,uint32,int64,uint64:
+                        	    fmt.Println("int",k, v)
+                        	    
+                                vs := fmt.Sprintf("%d", v)
+                        	    v = StrToInt64(vs)
+                        	   // value = append(value, v.(int)) 
+                        	break
+                        	case float64,float32:
+                                fmt.Println("float",k, v)
+                        	    v = v.(float64)
+                        	   // value = append(value, v.(float64)) 
+                        	break
+                        	default:
+                                v = fmt.Sprintf("%v",k, v)
+                    	}
+                    	// int,uint,int8,uint8,int16,uint16,int32,uint32,int64,uint64,float32,float64
+                    	value = append(value, v) 
+                    }
+                	if len(value) == 0 {
+                		break;
+                	}
+                	log.Errorf("Execute --> %v", value)
+                	
+                	_, err = stmtIns.Exec(value...)
+                	if err != nil {
+                        log.Errorf("Execute Error! --> %v", err)
+                        return  nil, errors.Trace(err)
+                	}
+                }
+                //提交
+                if err := tx.Commit(); err != nil {
+                    return nil, errors.Trace(err)
+                }
+            }
+           
+            
+        }
+    }
+    
+     <- m
+    
+    return nil,nil
+}
 func StrToInt64(tmpStr string) int{
     tmpInt,_ := strconv.Atoi(tmpStr)
     return tmpInt
@@ -126,7 +239,6 @@ func StrToInt64(tmpStr string) int{
 
 //是否过滤删除操作
 var FilterDelete = flag.Bool("action", true, "Ignore the delete operation")
-
 
 //执行更新
 func (r *BulkRequest) bulk(c *Client,tx *sql.Tx) error {
@@ -218,73 +330,9 @@ func (r *BulkRequest) bulk(c *Client,tx *sql.Tx) error {
             return  errors.Trace(err)
     	}
 		
-	default:
-		// for insert
-		value := make([]interface{}, 0, len(r.Data))
-		fields  := ""
-		values  := ""
-		for k, v := range r.Data {
-		    switch v.(type) {
-        	    case string:
-        	        v = v.(string)
-    				if v.(string) == "0000-00-00" {
-    					fmt.Println("Date",k,  v.(string))
-    					break
-    				}
-    				_, err := time.Parse("2006-01-02", v.(string))
-    				if err == nil {
-    					fmt.Println("Date",k,  v.(string))
-    				} else {
-    					fmt.Println("string",k,  v.(string))
-    				}
-                	   
-            		break
-            	case int,uint,int8,uint8,int16,uint16,int32,uint32,int64,uint64:
-            	    fmt.Println("int",k, v)
-            	    
-                    vs := fmt.Sprintf("%d", v)
-            	    v = StrToInt64(vs)
-            	   // value = append(value, v.(int)) 
-            	break
-            	case float64,float32:
-                    fmt.Println("float",k, v)
-            	    v = v.(float64)
-            	   // value = append(value, v.(float64)) 
-            	break
-            	default:
-                    v = fmt.Sprintf("%v",k, v)
-        	}
-        	// int,uint,int8,uint8,int16,uint16,int32,uint32,int64,uint64,float32,float64
-        	value = append(value, v) 
-			if fields == ""{
-				fields = k
-				values =  "?"
-			}else{
-				fields += ","+k
-				values += ",?"
-			}
-		}
-    	if len(value) == 0 {
-    		break;
-    	}
-    	
-		sql := "INSERT INTO "+r.Schema + "."+r.Table+" ("+fields+") VALUES ("+values+")"
-        //执行
-		log.Infof("Execute success  --> %v", sql)
-        // log.Infof("Execute value  --> %v", value)
-        stmtIns, err := tx.Prepare(sql)
-    	if err != nil {
-    	    log.Infof("Execute err")
-            // log.Errorf("Execute Error! --> %v", err)
-            return  errors.Trace(err)
-    	}
-    	defer stmtIns.Close()
-    	_, err = stmtIns.Exec(value...)
-    	if err != nil {
-    	    log.Infof("Execute err")
-            // log.Errorf("Execute Error! --> %v", err)
-            return  errors.Trace(err)
-    	}
+	    default:
+	
+	
 	}
 	
 	return nil

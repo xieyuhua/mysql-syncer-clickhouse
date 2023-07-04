@@ -229,8 +229,6 @@ func (c *Client) Bulk(reqs []*BulkRequest)  (interface{} ,error) {
         }
     }
     
-
-    
     return nil,nil
 }
 func StrToInt64(tmpStr string) int{

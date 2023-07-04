@@ -2,6 +2,24 @@
 
 监听binlog，将源mysql数据库的表实时同步到目标clickhouse库中
 
+```
+#!/bin/bash
+Screen(){
+    screen -x  $1 -p 0 -X stuff "$2"
+    screen -x  $1 -p 0 -X stuff "\n"
+}
+#clickhouse
+num=`ps -ef|grep go-mysql-ck|grep -v grep|wc -l`
+if [ $num -lt 1 ];then
+    echo "go-mysql-ck 重新启动"    
+    Screen  myck  "cd /work/clickhouse/ && ./go-mysql-ck"
+else
+    echo "go-mysql-ck 运行中"    
+fi
+```
+
+
+
 合理配置bulk_size、thread 详细配置见etc/river.toml
 
 ```

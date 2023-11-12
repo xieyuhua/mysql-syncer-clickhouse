@@ -1,5 +1,5 @@
 #!/bin/bash
-binName="bin/mysqlsync"
+binName="bin/mysqlck"
 
 GOOS=linux GOARCH=amd64 go build -o "$binName"_linux
 GOOS=darwin GOARCH=amd64 go build -o "$binName"_macos
